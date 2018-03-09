@@ -555,6 +555,53 @@ class ODOO(object):
         }
         session.save(name, data, rc_file)
 
+    def get_session_dict(self):
+        self._check_logged_user()
+        data = {
+            'type': self.__class__.__name__,
+            'host': self.host,
+            'protocol': self.protocol,
+            'port': self.port,
+            'timeout': self.config['timeout'],
+            'user': self._login,
+            'passwd': self._password,
+            'database': self.env.db,
+            'uid': self._env.uid,
+            'context': self._env.context
+        }
+        return data
+
+
+    @classmethod
+    def load_from_session(cls, session_dict):
+        """Return a connected :class:`ODOO` session from a dictionary:
+
+        *Python 2:*
+
+        :raise: :class:`odoorpc.error.RPCError`
+        :raise: `urllib2.URLError` (connection error)
+
+        *Python 3:*
+
+        :raise: :class:`odoorpc.error.RPCError`
+        :raise: `urllib.error.URLError` (connection error)
+        """
+        odoo = cls(
+            host=session_dict['host'],
+            protocol=session_dict['protocol'],
+            port=session_dict['port'],
+            timeout=session_dict['timeout'],
+        )
+        odoo._env = Environment(
+            odoo,
+            session_dict['database'],
+            session_dict['uid'],
+            context=session_dict['context'])
+        odoo._login = session_dict['user']
+        odoo._password = session_dict['passwd']
+        return odoo
+
+
     @classmethod
     def load(cls, name, rc_file='~/.odoorpcrc'):
         """Return a connected :class:`ODOO` session identified by `name`:
